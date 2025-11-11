@@ -1,0 +1,16 @@
+Server:
+  Interface: 127.0.0.1
+  "Listen Port": 2999
+  "WS Port": 8001
+
+Services:
+  - Name: Ballast
+    Upstream: http://127.0.0.1:3000
+
+  - Name: Local API
+    Upstream: http://127.0.0.1:8000
+    Path: /api
+    "Sent Header":
+      X-Loop-Guard: 1
+    "Read Header":
+      Proxy: 1

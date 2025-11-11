@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='darkgreen'/%3E%3C/svg%3E" />
+		<title>Proxy Cache</title>
+		<script src="https://cdn.tailwindcss.com"></script>
+		<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+	</head>
+	<body class="bg-black p-4 text-blue-500 font-mono">
+		<script id="seed-rows" type="application/json">
+			[% rows_json %]
+		</script>
+
+		<div id="app">
+			<div v-if="!showTextarea">
+				<div class="flex justify-end mb-4">
+					<input v-model="searchFilter" type="text" class="border border-dashed border-green-500 bg-black text-blue-500 p-2 text-sm placeholder-blue-500 focus:outline-none focus:border-green-500 w-[300px]" placeholder="Search..." />
+				</div>
+				<table class="w-full border-collapse border border-dashed border-green-500 bg-black text-blue-500">
+					<thead class="bg-green-900/20 text-sm uppercase">
+						<tr>
+							<th class="border border-dashed border-green-500 p-2 text-center font-semibold">
+								<span @click="toggleAll" :class="{'bg-green-900': allSelected}" aria-label="Select all rows" class="align-middle inline-flex h-[15px] w-[15px] items-center justify-center border border-green-600 transition cursor-pointer hover:bg-green-600/50"></span>
+							</th>
+							<th class="border border-dashed border-green-500 pl-2 text-left font-semibold w-[3%]">ID</th>
+							<th class="border border-dashed border-green-500 pl-2 text-left font-semibold w-[12%]">Date</th>
+							<th class="border border-dashed border-green-500 pl-2 text-left font-semibold w-[5%]">Method</th>
+							<th class="border border-dashed border-green-500 pl-2 text-left font-semibold w-[60%]">URL</th>
+							<th class="border border-dashed border-green-500 pl-2 text-left font-semibold w-[10%]">Status</th>
+							<th class="border border-dashed border-green-500 pl-2 text-left font-semibold w-[5%]">Length</th>
+							<th class="border border-dashed border-green-500 pl-2 text-left font-semibold w-[5%]">Modified</th>
+						</tr>
+					</thead>
+					<tbody class="text-sm leading-none">
+						<tr v-for="row in filteredRows" :key="row.id" @click="showModal(row.id)">
+							<td class="border border-dashed border-green-500 p-2 align-middle text-center" @click.stop>
+								<span @click="row.selected = !row.selected" :class="{'bg-green-900': row.selected}" :aria-label="`Select row ${row.id}`" class="inline-flex h-[15px] w-[15px] items-center justify-center border border-green-600 transition cursor-pointer hover:bg-green-600/50"></span>
+							</td>
+							<td class="border border-dashed border-green-500 p-2 align-middle whitespace-nowrap">
+								{{ row.id }}
+							</td>
+							<td class="border border-dashed border-green-500 p-2 align-middle whitespace-nowrap w-100">
+								{{ formatTime(row.date) }}
+							</td>
+							<td class="border border-dashed border-green-500 p-2 align-middle" :title="row.method">
+								{{ row.method }}
+							</td>
+							<td class="border border-dashed border-green-500 p-2 align-middle truncate" :title="row.path">
+								{{ truncateText(row.path, 100) }}
+							</td>
+							<td class="border border-dashed border-green-500 p-2 align-middle" :title="row.status">
+								{{ row.status }}
+							</td>
+							<td class="border border-dashed border-green-500 p-2 align-middle" :title="row.length">
+								{{ row.length }}
+							</td>
+							<td class="border border-dashed border-green-500 p-2 align-middle" :title="row.modified">
+								{{ row.modified ? 'Yes' : 'No' }}
+							</td>
+						</tr>
+
+						<tr v-if="filteredRows.length === 0">
+							<td colspan="8" class="border border-dashed border-green-500 p-3 text-center text-green-500/70">No records</td>
+						</tr>
+					</tbody>
+				</table>
+				<div class="pt-2" v-if="rows.some(r => r.selected)">
+					<button @click="clearRows" class="px-3 py-1 border border-dashed border-green-500 text-blue-500 text-sm bg-black font-semibold rounded-sm hover:bg-green-900/20 transition text-green-500/33">Delete</button>
+				</div>
+			</div>
+			<div v-else>
+				<div class="border border-dashed border-green-500 bg-green-900/20 p-2 text-blue-500 font-semibold flex justify-between items-center h-[40px]">
+					<span class="text-sm">{{ truncateText(textareaTitle, 120) }}</span>
+					<svg @click="showTextarea = false" class="w-8 h-8 cursor-pointer pr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+					</svg>
+				</div>
+				<textarea
+					v-model="currentResponseBody"
+					class="w-full border border-dashed border-green-500 bg-black text-blue-500 p-2 font-mono text-sm focus:outline-none focus:border-dashed focus:border-green-500 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-black [&::-webkit-scrollbar-thumb]:bg-green-500 [&::-webkit-scrollbar-thumb]:border [&::-webkit-scrollbar-thumb]:border-green-500"
+					rows="20"
+				></textarea>
+				<div class="pt-2">
+					<button v-if="!showSaved && isJsonValid" @click="saveData" class="px-3 py-1 border border-dashed border-green-500 text-blue-500 text-sm bg-black font-semibold rounded-sm hover:bg-green-900/20 transition text-green-500/33">Save</button>
+					<span v-else-if="showSaved" :class="{'opacity-0': savedFading, 'opacity-100': !savedFading}" class="inline-block px-3 py-1 text-blue-500 text-sm bg-black font-semibold rounded-sm text-green-500/33 transition-opacity duration-500">Saved</span>
+					<span v-else-if="!isJsonValid" class="inline-block px-3 py-1 text-blue-500 text-sm bg-black font-semibold rounded-sm">Invalid JSON.</span>
+				</div>
+			</div>
+		</div>
+
+		<script>
+			const { createApp } = Vue;
+
+			createApp({
+				data() {
+					return {
+						rows: [],
+						showTextarea: false,
+						currentResponseBody: '',
+						textareaTitle: '',
+						memoryId: 0,
+						showSaved: false,
+						savedFading: false,
+						isJsonValid: true,
+						searchFilter: '',
+						wsConnected: true,
+						ws: null
+					};
+				},
+				mounted() {
+					const seedElement = document.getElementById('seed-rows');
+					if (seedElement) {
+						try {
+							const parsed = JSON.parse(seedElement.textContent || '{}');
+
+							if (parsed && typeof parsed === 'object') {
+								this.rows = Object.keys(parsed).map(id => ({
+									id,
+									...parsed[id]
+								}));
+							}
+						} catch (e) {
+							console.error('Invalid seed JSON:', e);
+						}
+					}
+
+					this.connectWebSocket();
+				},
+				computed: {
+					allSelected() {
+						return this.rows.length > 0 && this.rows.every(r => r.selected);
+					},
+					filteredRows() {
+						if (!this.searchFilter) {
+							return this.rows;
+						}
+						const filter = this.searchFilter.toLowerCase();
+						return this.rows.filter(row => {
+							if (row.response && row.response.body) {
+								const bodyStr = typeof row.response.body === 'string' ? row.response.body : JSON.stringify(row.response.body);
+								return bodyStr.toLowerCase().includes(filter);
+							}
+							return false;
+						});
+					}
+				},
+				watch: {
+					currentResponseBody(newValue) {
+						try {
+							JSON.parse(newValue);
+							this.isJsonValid = true;
+						} catch (e) {
+							this.isJsonValid = false;
+						}
+					}
+				},
+				methods: {
+					connectWebSocket() {
+						this.ws = new WebSocket('ws://127.0.0.1:8001/');
+
+						this.ws.onopen = () => {
+							this.wsConnected = true;
+							this.updateFavicon('darkgreen');
+						};
+
+						this.ws.onmessage = ev => {
+							try {
+								const snapshot = JSON.parse(ev.data);
+								this.updateRowsFromSnapshot(snapshot);
+							} catch (e) {
+								console.error('Bad WS payload:', e, ev.data);
+							}
+						};
+
+						this.ws.onerror = () => {
+							this.wsConnected = false;
+							this.updateFavicon('red');
+						};
+
+						this.ws.onclose = () => {
+							this.wsConnected = false;
+							this.updateFavicon('red');
+
+							// Attempt to reconnect after 3 seconds
+							setTimeout(() => {
+								this.connectWebSocket();
+							}, 3000);
+						};
+					},
+					updateFavicon(color) {
+						const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+						link.type = 'image/svg+xml';
+						link.rel = 'icon';
+						link.href = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='${color}'/%3E%3C/svg%3E`;
+						document.getElementsByTagName('head')[0].appendChild(link);
+					},
+					formatTime(epochSecons) {
+						if (!epochSecons && epochSecons !== 0) return '';
+						const d = new Date(epochSecons * 1000);
+						let dateString = d.toLocaleString(undefined, {
+							year: 'numeric',
+							month: '2-digit',
+							day: '2-digit',
+							hour: '2-digit',
+							minute: '2-digit',
+							second: '2-digit',
+							hour12: true
+						});
+
+						dateString = dateString.replace(/,/g, '');
+						return dateString;
+					},
+					toggleAll() {
+						const newState = !this.allSelected;
+						this.rows.forEach(r => (r.selected = newState));
+					},
+					async clearRows() {
+						// ids to delete.
+						const ids = this.rows.filter(row => row.selected).map(row => Number(row.id));
+
+						// Filter out the rows and update the state.
+						this.rows = this.rows.filter(r => !r.selected);
+
+						if (ids.length) {
+							const data = { ids: ids };
+							const response = await axios.delete('http://127.0.0.1:2999/cpl', {
+								data: JSON.stringify(data),
+								headers: { 'Content-Type': 'application/json; charset=utf-8' }
+							});
+						}
+					},
+					showModal(idx) {
+						const row = this.rows.find(r => r.id === idx);
+						if (row && row.response && row.response.body) {
+							this.memoryId = idx;
+							this.currentResponseBody = this.prettyJson(row.response.body);
+							this.textareaTitle = row.method + ' ' + row.path;
+						} else {
+							this.currentResponseBody = '';
+						}
+						this.showTextarea = true;
+					},
+					async saveData() {
+						try {
+							let textAreaContent = JSON.stringify(JSON.parse(this.currentResponseBody));
+
+							const response = await axios.post(`/cpl?id=${this.memoryId}`, textAreaContent, {
+								headers: {
+									'Content-Type': 'application/json; charset=utf-8'
+								}
+							});
+
+							const error = response.data?.error;
+							const msg = response.data?.msg;
+							if (!error) {
+								const foundIdx = this.rows.findIndex(row => row.id === this.memoryId);
+								this.rows[foundIdx].response.body = this.currentResponseBody;
+
+								this.showSaved = true;
+								this.savedFading = false;
+
+								// Start fade out after a brief delay.
+								setTimeout(() => {
+									this.savedFading = true;
+
+									// Hide and reset after the fade completes.
+									setTimeout(() => {
+										this.showSaved = false;
+										this.savedFading = false;
+									}, 500);
+								}, 800);
+							}
+						} catch (error) {
+							console.error('Error saving data:', error);
+						}
+					},
+					truncateText(text, maxLength = 30) {
+						if (!text) return '';
+						return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
+					},
+					prettyJson(val) {
+						try {
+							const obj = typeof val === 'string' ? JSON.parse(val) : val;
+							return JSON.stringify(obj, null, 2);
+						} catch (e) {
+							return String(val ?? '');
+						}
+					},
+					updateRowsFromSnapshot(snapshot) {
+						if (!snapshot || typeof snapshot !== 'object') return;
+
+						// Preserve which rows were selected before the update.
+						const prevSelected = Object.fromEntries(this.rows.map(r => [String(r.id), !!r.selected]));
+
+						// Convert memory hash -> rows array, keep selection state.
+						const next = Object.keys(snapshot).map(id => {
+							const rec = snapshot[id] || {};
+							return {
+								id: Number(id),
+								selected: prevSelected[id] || false,
+								...rec
+							};
+						});
+
+						this.rows = next;
+					}
+				}
+			}).mount('#app');
+		</script>
+	</body>
+</html>

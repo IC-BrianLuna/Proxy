@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./proxy.yml:/app/proxy.yml
+      - ./proxy-server.pl:/app/proxy-server.pl
+      - ./index.tt:/app/index.tt
+      - ./lib:/app/lib
+    restart: unless-stopped
+    network_mode: "host"
