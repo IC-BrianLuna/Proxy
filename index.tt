@@ -158,7 +158,7 @@
 				},
 				methods: {
 					connectWebSocket() {
-						this.ws = new WebSocket('ws://127.0.0.1:8001/');
+						this.ws = new WebSocket('ws://127.0.0.1:8002/');
 
 						this.ws.onopen = () => {
 							this.wsConnected = true;

@@ -36,7 +36,7 @@ RUN chmod +x proxy-server.pl
 EXPOSE 2999
 
 # Expose the WebSocket port
-EXPOSE 8001
+EXPOSE 8002
 
 # Run the proxy server
 CMD ["perl", "proxy-server.pl"]

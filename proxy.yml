@@ -1,7 +1,7 @@
 Server:
   Interface: 127.0.0.1
   "Listen Port": 2999
-  "WS Port": 8001
+  "WS Port": 8002
 
 Services:
   - Name: Ballast

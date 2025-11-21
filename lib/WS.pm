@@ -8,7 +8,7 @@ use AnyEvent::WebSocket::Server;
 use Scalar::Util qw(refaddr);
 
 my $json    = JSON::XS->new->utf8(1)->canonical(1);
-my $ws_port = 8001;
+my $ws_port = 8002;
 my $ws      = AnyEvent::WebSocket::Server->new();
 
 # Keep live connections
