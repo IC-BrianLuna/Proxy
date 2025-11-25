@@ -5,12 +5,4 @@ Server:
 
 Services:
   - Name: Ballast
-    Upstream: http://127.0.0.1:3000
-
-  - Name: Local API
-    Upstream: http://127.0.0.1:8000
-    Path: /api
-    "Sent Header":
-      X-Loop-Guard: 1
-    "Read Header":
-      Proxy: 1
+    Upstream: http://localhost:3000
