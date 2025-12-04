@@ -24,13 +24,13 @@
 							<th class="border border-dashed border-green-500 p-2 text-center font-semibold">
 								<span @click="toggleAll" :class="{'bg-green-900': allSelected}" aria-label="Select all rows" class="align-middle inline-flex h-[15px] w-[15px] items-center justify-center border border-green-600 transition cursor-pointer hover:bg-green-600/50"></span>
 							</th>
-							<th class="border border-dashed border-green-500 pl-2 text-left font-semibold w-[3%]">ID</th>
+							<th class="border border-dashed border-green-500 p-2 xl:pl-2 text-left font-semibold w-[3%]">ID</th>
 							<th class="border border-dashed border-green-500 pl-2 text-left font-semibold w-[12%]">Date</th>
-							<th class="border border-dashed border-green-500 pl-2 text-left font-semibold w-[5%]">Method</th>
+							<th class="border border-dashed border-green-500 p-2 xl:pl-2 text-left font-semibold w-[5%]">Method</th>
 							<th class="border border-dashed border-green-500 pl-2 text-left font-semibold w-[60%]">URL</th>
 							<th class="border border-dashed border-green-500 pl-2 text-left font-semibold w-[10%]">Status</th>
-							<th class="border border-dashed border-green-500 pl-2 text-left font-semibold w-[5%]">Length</th>
-							<th class="border border-dashed border-green-500 pl-2 text-left font-semibold w-[5%]">Modified</th>
+							<th class="border border-dashed border-green-500 p-2 xl:pl-2 text-left font-semibold w-[5%]">Length</th>
+							<th class="border border-dashed border-green-500 p-2 xl:pl-2 text-left font-semibold w-[5%]">Modified</th>
 						</tr>
 					</thead>
 					<tbody class="text-sm leading-none">
