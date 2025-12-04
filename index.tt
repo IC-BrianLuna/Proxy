@@ -257,6 +257,7 @@
 							if (!error) {
 								const foundIdx = this.rows.findIndex(row => row.id === this.memoryId);
 								this.rows[foundIdx].response.body = this.currentResponseBody;
+								this.rows[foundIdx].modified = true;
 
 								this.showSaved = true;
 								this.savedFading = false;
