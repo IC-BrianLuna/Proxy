@@ -73,13 +73,13 @@ $httpd->reg_cb(
 						my $response_header = $record{response}{header};
 						my $response_body   = $record{response}{body};
 
-						# Encode Perl strings back to UTF-8 bytes for HTTP response
+						# Encode Perl strings back to UTF-8 bytes for HTTP response.
 						my $encoded_body = eval { encode_utf8($response_body) } || $response_body;
 
 						$response_header->{'content-length'} = length($encoded_body);
-						$response_header->{'content-type'}   = 'application/json; charset=utf-8',
+						$response_header->{'content-type'}   = 'application/json; charset=utf-8';
 
-						  $req->respond([$status, $response_header->{Reason}, $response_header, $encoded_body]);
+						$req->respond([$status, $response_header->{Reason}, $response_header, $encoded_body]);
 						$has_memory = 1;
 
 						last;
